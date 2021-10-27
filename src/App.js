@@ -3,18 +3,19 @@ import React from 'react';
 import './App.css';
 
 
+//Card Component: <GetCard rank="" suit=""/> (ranks: 1,2...jack,queen,king,ace; suits: clubs,spades,hearts,diamonds)
+function Card(props) {
+  return (
+    <img src={"./cards/" + props.rank + "_of_" + props.suit + ".png"}  width="100" height="150"/>
+  )
+}
+
 class App extends React.Component {
-
-  //return image source given its rank and suit in string(ex. getCardSrc("3", "hearts"))
-  getCardSrc(rank, suit) {
-    return "./cards/" + rank + "_of_" + suit + ".png" 
-  }
-
   render()  {
     return (
       <div>
-        <h1>HAHA</h1>
-        <img src={this.getCardSrc("2", "hearts")} width="100" height="150"/>
+        <h2>lol</h2>
+        <Card rank="2" suit="hearts"/><Card rank="ace" suit="clubs"/>
       </div>
     )
   }
