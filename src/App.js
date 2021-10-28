@@ -63,10 +63,10 @@ class Player extends React.Component {
       chips: 1000,
       cards: this.props.cards,
       id: this.props.id,
-      handStrength: "high card",
       position: this.props.position,
       action: this.props.action,
       message: this.props.message,
+      handStrength: "high card",
     }
   }
   render() {
@@ -91,7 +91,7 @@ class App extends React.Component {
     super()
     this.state={
       numPlayers: 6,
-      button: 2,
+      button: 0,
       playerPositions: [],
       currPlayer: 0,
       deck: newDeck(),
@@ -108,6 +108,7 @@ class App extends React.Component {
       this.state.playerPositions.push(position)
     }
 
+
     //activate class functions
     this.playerResponded = this.playerResponded.bind(this)
     this.createPlayer = this.createPlayer.bind(this)
@@ -122,16 +123,12 @@ class App extends React.Component {
   }
 
   playerResponded(PlayerID, choice) {
-    const players = []
-    for (let i=0; i<this.state.numPlayers; i++) {
-      if (PlayerID!==i) players.push(this.createPlayer(i))
-      else players.push(<Player id={i} cards={[this.state.deck[i], this.state.deck[51-i]]} 
-        position={this.state.playerPositions[i]} action={this.playerResponded} message={"clicked"}/>)
-    }
-
+    //remember to use key
     this.setState({
-      playerComponents: players,
+      playerComponents: [<Player id={PlayerID} key={PlayerID} cards={[this.state.deck[PlayerID], this.state.deck[51-PlayerID]]} 
+      position={this.state.playerPositions[PlayerID]} action={this.playerResponded} message={"I survive!"}/>]
     })
+    
   }
 
 
