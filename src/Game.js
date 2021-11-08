@@ -72,7 +72,12 @@ function Player(props) {
             </div>
         )
     }
-    return null;
+    return (
+        <div>
+            <h3>Player{props.id} {props.message}</h3>
+            <hr/>
+        </div>
+    );
 }
 
 
@@ -87,7 +92,7 @@ class Game extends React.Component {
             deck: shuffledDeck(), //a list of obj = {image: <Card .../>, rank: 0~12, suit: string}
             
             playersData: [], // a list of obj = {id:, position:, chips:, bet:, message:, cards:, turn:, action:, playing:}
-            tableComponent: null, 
+            tableData: null, 
         }
         //activate class functions that use setState
         this.playerResponded = this.playerResponded.bind(this)
@@ -95,7 +100,7 @@ class Game extends React.Component {
         this.initializeGame()
     }
 
-    getTwoCards(id) {return [this.state.deck[id]["image"], this.state.deck[51-id]["image"]]}
+    getTwoCards(id) {return [this.state.deck[id]["image"], this.state.deck[51-id]["image"]]} //get two cards from the top and bottom of the ramdomized deck.
     
     initializeGame() {
         //initialize players
@@ -128,14 +133,58 @@ class Game extends React.Component {
         for (let i=0; i<5; i++) {
             tableCards.push(this.state.deck[52/2+i*Math.pow(-1,i)]["image"])
         }     
-        this.state.tableComponent = <Table cards={tableCards} pot={0}/>
-        
+        this.state.tableData = {cards: tableCards, pot: 0}
     } 
 
     playerResponded(id, choice) {
-        
+        const playersData = [...this.state.playersData] //assigned by value
+        const player = playersData[id] //assigned by reference
+        const tableData = {...this.state.tableData} //assigned by value
 
-        const playersData = [...this.state.playersData]
+        //increase bet
+        if (choice === "Increase") {
+            if (player["bet"] < player["chips"]) {
+                player["bet"] += 50
+            }
+            this.setState({playersData: playersData,})
+        }
+        //these are actions that end a player's turn
+        else {
+            if (choice === "Fold") {
+                player["playing"] = false 
+                player["message"] = "folded"
+            } else {
+                if (choice === "Check/Call") {
+                    let prevId = id-1
+                    if (prevId === -1) prevId = playersData.length-1
+                    while (!playersData[prevId]["playing"]) {
+                        prevId -= 1
+                        if (prevId === -1) prevId = playersData.length-1
+                    }    
+                    player["bet"] = playersData[prevId]["bet"]         
+                }
+                tableData["pot"] += player["bet"]
+                player["chips"] -= player["bet"]
+            }
+
+            player["turn"] = false
+            
+            let nextId = id+1
+            if (nextId === playersData.length) nextId = 0
+            while (!playersData[nextId]["playing"]) {
+                nextId += 1
+                if (nextId === playersData.length) nextId = 0
+            }
+
+            playersData[nextId]["turn"] = true
+            playersData[nextId]["bet"] = player["bet"]
+
+            this.setState({
+                playersData: playersData,
+                tableData: tableData,
+                currPlayer: nextId,
+            })
+        }
     }
 
     //props={id, position, chips, bet, message, cards, turn, action, playing}
@@ -150,9 +199,10 @@ class Game extends React.Component {
             action={player.action}
             playing={player.playing}
         />)
+        const table = this.state.tableData
         return (
             <div>
-                {this.state.tableComponent}
+                <Table cards={table["cards"]} pot={table["pot"]}/>
                 <hr/>
                 <h4>Current Player: {this.state.currPlayer}</h4>
                 <hr/>
