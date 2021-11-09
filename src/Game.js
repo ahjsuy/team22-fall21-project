@@ -1,5 +1,8 @@
 import React from "react";
 
+import Card from "./Card"
+import Table from "./Table"
+import Player from "./Player"
 
 //return an organized deck of 52 cards
 function orderedDeck() {
@@ -26,65 +29,8 @@ function shuffledDeck() {
     }
     return shuffledDeck;
 }
+//Some constants
 const DECK = orderedDeck()
-
-
-//Card Component: <Card rank="" suit=""/> (ranks: 1,2...jack,queen,king,ace; suits: clubs,spades,hearts,diamonds)
-function Card(props) {
-    return (
-      <img src={"./cards/" + props.rank + "_of_" + props.suit + ".png"}  width="100" height="150"/>
-    )
-}
-
-//Table Component
-//props={cards, pot, numRevealed}
-function Table (props) {
-    const cards = []
-    for (let i=0; i<props.numRevealed; i++) {cards.push(props.cards[i])}
-
-    return (
-        <div>
-            <h2>Table</h2>
-            <div>
-                {cards}
-            </div>
-            <h3>Pot: {props.pot}</h3>
-        </div>
-    )
-}
-
-//Player Component
-//props={id, position, chips, bet, message, cards, turn, action, folded}
-function Player(props) {
-    if (!props.folded) {
-        return (
-            <div>
-                <h3>Player{props.id} {props.position} Chips:{props.chips} Bet:{props.bet} {props.message}</h3> 
-                <div>
-                    {props.cards}
-                </div>
-                {
-                    props.turn &&
-                    <div>
-                        <button onClick={() => props.action(props.id, "Check/Call")}>Check/Call</button>
-                        <button onClick={() => props.action(props.id, "Fold")}>Fold</button>
-                        <button onClick={() => props.action(props.id, "Raise")}>Raise</button>
-                        <button onClick={() => props.action(props.id, "Increase")}>Increase bet amount</button>
-                    </div>
-                }
-                <hr/>
-            </div>
-        )
-    }
-    return (
-        <div>
-            <h3>Player{props.id} {props.position} {props.message} Chips:{props.chips} Bet:{props.bet}</h3>
-            <hr/>
-        </div>
-    );
-}
-
-
 const roundName = ["PreFlop", "Flop", "Turn", "River", "Showdown"]
 const smallestBet = 50 //the smallest amount of chips small blind has to bet
 const NUM_PLAYERS = 5
