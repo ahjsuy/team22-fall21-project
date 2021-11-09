@@ -82,18 +82,11 @@ class Game extends React.Component {
                 initialBet=smallestBet*2   
                 chips -= initialBet     
             }
-            playersData.push({
-                id: i,
-                position: pos,
-                chips: chips,
-                bet: initialBet,
-                message: null,
-                cards: this.getTwoCards(i, this.state.deck),
-                turn: false,
-                action: this.playerResponded,
-                folded: false,
+            playersData.push({id: i, position: pos, chips: chips, bet: initialBet, message: null, 
+                cards: this.getTwoCards(i, this.state.deck), turn: false, action: this.playerResponded, folded: false,
             })
         }
+
         //populate nowPlaying array starting from currPlayer
         for (let i=this.state.currPlayer; i<playersData.length; i++) {this.state.nowPlaying.push(i)}
         for (let i=0; i<this.state.currPlayer; i++) {this.state.nowPlaying.push(i)}
@@ -117,8 +110,8 @@ class Game extends React.Component {
         let nowPlaying = []
         const tableData = {...this.state.tableData} //need new cards, reset numRevealed
         let button = null
-
-        //Find the next button and count how many players still remain
+        playersData[this.state.button]["position"] = null //null current button
+        //Find the next button
         for (let i=this.state.button+1; i<playersData.length; i++) {
             if (playersData[i]["chips"] !== 0) {
                 button = i
@@ -157,7 +150,8 @@ class Game extends React.Component {
                 playersData[nowPlaying[0]]["position"] = positionNames[1]
                 playersData[nowPlaying[1]]["position"] = positionNames[2]               
             } 
-        } else { } //game ends when there is only one player remaining
+        } else { } //game ends when there is only one player with chips remaining
+        
 
         //rearrange nowPlaying by having first to act player stay at index 0
         const nowPlayingCopy = []
@@ -166,11 +160,20 @@ class Game extends React.Component {
         nowPlaying = nowPlayingCopy
         
         //update remaining players' other properties
-        for (const playerId of nowPlaying) {
-            playersData[playerId]["cards"] = this.getTwoCards(playerId, deck)
-            playersData[playerId]["message"] = null
-            playersData[playerId]["turn"] = playerId === nowPlaying[firstToAct] ? true : false
-            playersData[playerId]["folded"] = false
+        for (const id of nowPlaying) {
+            
+            playersData[id]["cards"] = this.getTwoCards(id, deck)
+            playersData[id]["message"] = null
+            playersData[id]["turn"] = id === nowPlaying[0] ? true : false
+            playersData[id]["folded"] = false
+            playersData[id]["bet"] = 0
+            if (playersData[id]["position"]==="SB") {
+                playersData[id]["bet"] = smallestBet
+                playersData[id]["chips"] -= smallestBet
+            } else if (playersData[id]["position"]==="BB") {
+                playersData[id]["bet"] = smallestBet*2
+                playersData[id]["chips"] -= smallestBet*2          
+            }
         }
 
         //update table data
@@ -205,6 +208,7 @@ class Game extends React.Component {
             }
             let highest = this.state.highestBet
             if (player["bet"]>highest) highest = player["bet"] 
+            else player["bet"] = highest
             this.setState({
                 playersData: playersData,
                 highestBet: highest,
@@ -231,10 +235,15 @@ class Game extends React.Component {
                 player["message"] = "folded"
                 nowPlaying.splice(nowPlaying.indexOf(id), 1) //remove from player list
                 //collect bet
-                tableData["pot"] += player["bet"] 
-                player["chips"] -= player["bet"]       
+                let fix = 0 //if one of the blinds folds, don't collect again the bet they already contribute at the beginning of the betting round
+                if (player["position"]==="SB") fix = smallestBet
+                else if (player["position"]==="BB") fix = smallestBet*2
+                tableData["pot"] += player["bet"] - fix
+                player["chips"] -= player["bet"] - fix
+                
                 if (nowPlaying.length === 1) { //end this game round early if all except one player folded
-                    playersData[nowPlaying[0]]["chips"] += tableData["pot"]
+                    playersData[nowPlaying[0]]["chips"] += tableData["pot"] 
+
                     tableData["pot"] = 0
                     this.setState({playersData: playersData, tableData: tableData, currPlayer: nextId, nowPlaying: nowPlaying, round: round})
                     this.newRound()
@@ -252,9 +261,12 @@ class Game extends React.Component {
                     player["bet"] += difference
                     tableData["pot"] += difference 
                     player["chips"] -= difference
+                } else {
+                    tableData["pot"] += player["bet"] 
+                    player["chips"] -= player["bet"]
                 }
             }
-
+            
             //end current player's turn and start next player's turn
             player["turn"] = false
             playersData[nextId]["turn"] = true
@@ -265,6 +277,8 @@ class Game extends React.Component {
                     if (playersData[index]["position"] === "SB") bet = smallestBet
                     else if (playersData[index]["position"] === "BB") bet = smallestBet*2
                     playersData[index]["bet"] = bet
+                    playersData[index]["chips"] -= bet
+                    tableData["pot"] += bet
                 }
             }
     
@@ -289,9 +303,9 @@ class Game extends React.Component {
         }
     }
 
-    //props={id, position, chips, bet, message, cards, turn, action, folded}
+
     render()  {
-        //use playerData to create an array of Player Components
+        //use playerData to map an array of Player Components
         const playerComponents = this.state.playersData.map(player => <Player id={player.id} 
             position={player.position}
             chips={player.chips}
@@ -303,13 +317,15 @@ class Game extends React.Component {
             folded={player.folded}
         />)
         const table = this.state.tableData
+        const tableComponent = <Table cards={table["cards"]} pot={table["pot"]} numRevealed={table.numRevealed}/>
         return (
             <div>
-                <Table cards={table["cards"]} pot={table["pot"]} numRevealed={table.numRevealed}/>
+                {tableComponent}
                 <hr/>
                 <h4>Current Player:{this.state.currPlayer} Round:{roundName[this.state.round]}</h4>
                 <hr/>
                 {playerComponents}
+                {tableComponent}
             </div>
         )
     }
