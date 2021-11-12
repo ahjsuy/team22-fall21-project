@@ -367,6 +367,7 @@ class Game extends React.Component {
                         message += "share the pot of " + tableData["pot"].toString() + " chips!!!"
                     } 
                     tableData["pot"] = 0
+                    playersData[nextId]["turn"] = false //game round ends, so it's no one's turn.
                 }
             }
 
