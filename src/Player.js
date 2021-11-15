@@ -10,9 +10,9 @@ function Player(props) {
                 {
                     props.turn &&
                     <div>
-                        <div>
-                            {props.cards} {props.strengths[props.round]}
-                        </div>
+                    <div>
+                        {props.cards} {props.strengths[props.round]}
+                    </div>
                         <button onClick={() => props.action(props.id, "Check/Call")}>Check/Call</button>
                         <button onClick={() => props.action(props.id, "Fold")}>Fold</button>
                         {(props.bet+props.raised > props.highestBet) && <button onClick={() => props.action(props.id, "Raise")}>Raise</button>}
