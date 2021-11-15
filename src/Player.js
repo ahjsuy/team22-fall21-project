@@ -7,12 +7,12 @@ function Player(props) {
         return (
             <div>
                 <h3>Player{props.id} [{props.position}] [Chips:{props.chips}] [Bet:{props.bet}] {props.message} {(props.raised>0) && <div>Raise bet to:{props.raised+props.bet}</div>}</h3> 
-                <div>
-                    {props.cards} {props.strengths[props.round]}
-                </div>
                 {
                     props.turn &&
                     <div>
+                        <div>
+                            {props.cards} {props.strengths[props.round]}
+                        </div>
                         <button onClick={() => props.action(props.id, "Check/Call")}>Check/Call</button>
                         <button onClick={() => props.action(props.id, "Fold")}>Fold</button>
                         {(props.bet+props.raised > props.highestBet) && <button onClick={() => props.action(props.id, "Raise")}>Raise</button>}
@@ -25,7 +25,7 @@ function Player(props) {
     }
     return (
         <div>
-            <h3>Player{props.id} {props.position} {props.message} Chips:{props.chips} Bet:{props.bet}</h3>
+            <h3>Player{props.id} [{props.position}] {props.message} [Chips:{props.chips}] [Bet:{props.bet}]</h3>
             <hr/>
         </div>
     );
