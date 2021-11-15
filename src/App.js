@@ -7,12 +7,10 @@ class App extends React.Component {
     return (
       <div>
         <h1>POKER</h1>
-        <hr/>
         <Game/>
       </div>
     )
   }
 }
-
 
 export default App;
