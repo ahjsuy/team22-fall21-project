@@ -105,10 +105,12 @@ class Game extends React.Component {
             tableData: null, //{cards: , pot: , numRevealed: } (numRevealed: number of cards revealed)
             winnerId: null,
             message: null,
+            nextPlayer: false, //if true, show a button that can reveal next player's cards
         }
         //activate class functions that use setState
         this.playerResponded = this.playerResponded.bind(this)
         this.newRound = this.newRound.bind(this)
+        this.onNextPlayer = this.onNextPlayer.bind(this)
 
         this.initializeGame()
     }
@@ -273,8 +275,14 @@ class Game extends React.Component {
 
         this.setState({
             numPlayers: NUM_PLAYERS, round: 0, playersData: playersData, nowPlaying: nowPlaying, 
-            tableData: tableData, highestBet: 0, deck: deck, currPlayer: nowPlaying[firstToAct],
+            tableData: tableData, highestBet: 0, deck: deck, currPlayer: nowPlaying[firstToAct], highestBet: 2*smallestBet
         })
+    }
+
+    onNextPlayer() {
+        const playersData = [...this.state.playersData]
+        playersData[this.state.currPlayer]["turn"] = true
+        this.setState({playersData: playersData, nextPlayer: false})
     }
 
     playerResponded(id, choice) {
@@ -342,14 +350,12 @@ class Game extends React.Component {
                 }
                 player.raised = 0   
             }
-            //end current player's turn and start next player's turn
+            //end current player's turn
             player["turn"] = false
-            playersData[nextId]["turn"] = true
-
 
             //check if the next round should begin
             let message = ""
-            if (round !== this.state.round) {
+            if (round !== this.state.round) { 
                 if (round === 1) tableData["numRevealed"] = 3 //Flop
                 else if (round === 2) tableData["numRevealed"] = 4 //Turn    
                 else if (round === 3) tableData["numRevealed"] = 5 //River
@@ -371,7 +377,8 @@ class Game extends React.Component {
                 }
             }
 
-            this.setState({playersData: playersData, tableData: tableData, currPlayer: nextId, nowPlaying: nowPlaying, round: round, message: message, highestBet: highestBet})
+            this.setState({playersData: playersData, tableData: tableData, currPlayer: nextId, 
+                nowPlaying: nowPlaying, round: round, message: message, highestBet: highestBet, nextPlayer: true})
         }
     }
 
@@ -399,6 +406,7 @@ class Game extends React.Component {
         return (
             <div>
                 {this.state.round===4 ? newDeckButton : gameStatus}
+                {this.state.nextPlayer &&  <button onClick={this.onNextPlayer}>Next Player</button>}
                 <hr/>
                 {tableComponent}
                 <hr/>
