@@ -412,6 +412,9 @@ class Game extends React.Component {
                 <hr/>
                 {playerComponents}
                 {tableComponent}
+                <hr/>
+                {this.state.round===4 ? newDeckButton : gameStatus}
+                {this.state.nextPlayer &&  <button onClick={this.onNextPlayer}>Next Player</button>}
             </div>
         )
     }
