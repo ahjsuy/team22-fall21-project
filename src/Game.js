@@ -70,23 +70,24 @@ class Game extends React.Component {
     constructor() {
         super()
         this.state={
-            numPlayers: 6,
-            button: 0,
-            playerPositions: [],
-            currPlayer: 0,
-            deck: shuffledDeck(),
-            playerComponents: [],
-            tableComponent: null,
+            numPlayers: NUM_PLAYERS, //number of players
+            button: 0, //the player id of the button of a poker game
+            currPlayer: 3, //who's turn (probably unnecessary)
+            deck: shuffledDeck(), //a list of obj = {image: <Card .../>, rank: 0~12, suit: string}
+            round: 0,
+            nowPlaying: [], //a list of ids of players who haven't folded or busted. Index 0 goes first at the start of a betting round.
+            highestBet: smallestBet*2,
+            
+            playersData: [], // a list of obj = {id:, position:, chips:, bet:, message:, cards:, turn:, action:, folded:}
+            tableData: null, //{cards: , pot: , numRevealed: } (numRevealed: number of cards revealed)
+            winnerId: null,
+            message: null,
+            nextPlayer: false, //if true, show a button that can reveal next player's cards
         }
-        
-        //initialize playerPositions
-        for (let i=0; i<this.state.numPlayers; i++) {
-        let position = null
-            if (this.state.button===i) position="Button"
-            if (this.state.button+1===i || this.state.button+1-this.state.numPlayers===i) position="Small Blind"
-            if (this.state.button+2===i || this.state.button+2-this.state.numPlayers===i) position="Big Blind"
-        this.state.playerPositions.push(position)
-        }
+        //activate class functions that use setState
+        this.playerResponded = this.playerResponded.bind(this)
+        this.newRound = this.newRound.bind(this)
+        this.onNextPlayer = this.onNextPlayer.bind(this)
 
         //activate class functions
         this.playerResponded = this.playerResponded.bind(this)
@@ -107,37 +108,129 @@ class Game extends React.Component {
         const players = [...this.state.playerComponents]
         players[id] = this.createPlayer(id, choice)
         this.setState({
-            playerComponents: players
+            numPlayers: NUM_PLAYERS, round: 0, playersData: playersData, nowPlaying: nowPlaying, 
+            tableData: tableData, highestBet: 0, deck: deck, currPlayer: nowPlaying[firstToAct], highestBet: 2*smallestBet
         })
     }
 
+    onNextPlayer() {
+        const playersData = [...this.state.playersData]
+        playersData[this.state.currPlayer]["turn"] = true
+        this.setState({playersData: playersData, nextPlayer: false})
+    }
 
-    initializeGame() {
-        //initialize players
-        const players = []
-        const tableCards = []
-        for (let i=0; i<this.state.numPlayers; i++) {       
-            players.push(this.createPlayer(i))
+    playerResponded(id, choice) {
+        const playersData = [...this.state.playersData] //assigned by value
+        const player = playersData[id] //assigned by reference 
+        let highestBet = this.state.highestBet
+
+        if (choice === "Increase") { //increase bet
+            if (player["bet"]+player["raised"] < player["chips"]) {
+                player["raised"] += smallestBet
+                if (player["bet"]+player["raised"] === player["chips"]) player["message"] = "All in"
+            }
+            if (player["bet"]+player["raised"]<highestBet) player["raised"] = highestBet - player["bet"] + smallestBet
+            this.setState({playersData: playersData})
+        } else { 
+            const tableData = {...this.state.tableData} //assigned by value
+            const nowPlaying = [...this.state.nowPlaying]
+            let round = this.state.round
+            
+
+            //search next player's id
+            const playingIndex = nowPlaying.indexOf(id)
+            let nextId
+            if (playingIndex === nowPlaying.length-1) {
+                nextId = nowPlaying[0]
+                round += 1
+            } else nextId = nowPlaying[playingIndex+1]
+
+            //these are actions that end a player's turn
+            if (choice === "Fold") {
+                player["folded"] = true 
+                player["message"] = "folded"
+                nowPlaying.splice(nowPlaying.indexOf(id), 1) //remove from player list
+                //collect bet
+                let fix = 0 //if one of the blinds folds, don't collect again the bet they already contribute at the beginning of the betting round
+                if (player["position"]==="SB") fix = smallestBet
+                else if (player["position"]==="BB") fix = smallestBet*2
+                tableData["pot"] += player["bet"] - fix
+                player["chips"] -= player["bet"] - fix
+                
+                if (nowPlaying.length === 1) { //end this game round early if all except one player folded
+                    playersData[nowPlaying[0]]["chips"] += tableData["pot"] 
+                    const message = "Player" + nowPlaying[0].toString() + " won the pot of " + tableData["pot"].toString() + " chips!!!"
+                    tableData["pot"] = 0
+                    this.setState({playersData: playersData, tableData: tableData, currPlayer: nextId, nowPlaying: nowPlaying, round: 4, message: message})
+                    return
+                }
+            } else { 
+                if (choice === "Check/Call") {
+                    //set current player's bet to match highest bet
+                    let difference = highestBet - player["bet"] 
+                    if (difference + player["bet"] >= player["chips"]) { //if proposed bet amount is greater than the amount of the chips the player has
+                        difference = player["chips"] - player["bet"]
+                        player["message"] = "All in"
+                    }
+                    //collect bet
+                    player["bet"] += difference
+                    tableData["pot"] += difference 
+                    player["chips"] -= difference
+                } else {//Raise
+                    player["chips"] -= player["raised"]
+                    tableData["pot"] += player["raised"]
+                    player["bet"] += player["raised"]  
+                    highestBet = player["bet"]   
+                }
+                player.raised = 0   
+            }
+            //end current player's turn
+            player["turn"] = false
+
+            //check if the next round should begin
+            let message = ""
+            if (round !== this.state.round) { 
+                if (round === 1) tableData["numRevealed"] = 3 //Flop
+                else if (round === 2) tableData["numRevealed"] = 4 //Turn    
+                else if (round === 3) tableData["numRevealed"] = 5 //River
+                else { //Showdown, find winner, distribute pot
+                    const winnerIDs = this.findWinner(nowPlaying, playersData) 
+                    if (winnerIDs.length === 1) {
+                        message = "Player" + winnerIDs[0].toString() + " won the pot of " + tableData["pot"].toString() + " chips!!!"
+                        playersData[winnerIDs[0]]["chips"] += tableData["pot"]
+                    } else { //split the pot if more than one player win
+                        const share = tableData["pot"] / winnerIDs.length
+                        for (const id of winnerIDs) {
+                            playersData[id]["chips"] += share
+                            message += "Player" + id.toString() + ", "
+                        }
+                        message += "share the pot of " + tableData["pot"].toString() + " chips!!!"
+                    } 
+                    tableData["pot"] = 0
+                    playersData[nextId]["turn"] = false //game round ends, so it's no one's turn.
+                }
+            }
+
+            this.setState({playersData: playersData, tableData: tableData, currPlayer: nextId, 
+                nowPlaying: nowPlaying, round: round, message: message, highestBet: highestBet, nextPlayer: true})
         }
-        //initialize table
-        for (let i=0; i<5; i++) {
-            tableCards.push(this.state.deck[52/2+i*Math.pow(-1,i)])
-        }     
-        //initialize pot
-
-        this.state.playerComponents = players
-        this.state.tableComponent = <Table cards={tableCards} pot={0}/>
-
-    } 
+    }
 
     render()  {
         const data = this.state
         return (
-        <div>
-            {data.tableComponent}
-            <hr/>
-            {data.playerComponents}
-        </div>
+            <div>
+                {this.state.round===4 ? newDeckButton : gameStatus}
+                {this.state.nextPlayer &&  <button onClick={this.onNextPlayer}>Next Player</button>}
+                <hr/>
+                {tableComponent}
+                <hr/>
+                {playerComponents}
+                {tableComponent}
+                <hr/>
+                {this.state.round===4 ? newDeckButton : gameStatus}
+                {this.state.nextPlayer &&  <button onClick={this.onNextPlayer}>Next Player</button>}
+            </div>
         )
     }
 }
