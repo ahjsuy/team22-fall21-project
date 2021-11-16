@@ -34,7 +34,7 @@ function shuffledDeck() {
 
 //hand rank calculator(algorithm I found online. Not Readable. know how to use it) 
 function evaluateHand(cs, ss) {  //usage: evaluateHand([A,10,J,K,Q],[C,C,C,C,C]), return the name of the hand
-    var pokerHands = ["4 of a Kind", "Straight Flush","Straight","Flush","High Card","1 Pair","2 Pair","Royal Flush", "3 of a Kind","Full House"];
+    var pokerHands = ["4 OF A KIND", "STRAIGHT FLUSH", "STRAIGHT", "FLUSH", "HIGH CARD", "1 PAIR", "2 PAIR", "ROYAL FLUSH", "3 OF A KIND", "FULL HOUSE"];
     var v,i,o,s = 1 << cs[0] | 1 << cs[1] | 1 << cs[2] | 1 << cs[3] | 1 << cs[4];
     for (i = -1, v = o = 0; i < 5; i++, o = Math.pow(2, cs[i] * 4)) {v += o * ((v / o & 15) + 1);}
     v = v % 15 - ((s / (s & -s) == 31) || (s == 0x403c) ? 3 : 1);
@@ -42,7 +42,7 @@ function evaluateHand(cs, ss) {  //usage: evaluateHand([A,10,J,K,Q],[C,C,C,C,C])
     return pokerHands[v];
 }
 
-const strengthValues = {"High Card":0, "1 Pair":1, "2 Pair":2, "3 of a Kind":3, "Straight":4, "Flush":5, "Full House":6, "4 of a Kind":7, "Straight Flush":8, "Royal Flush":9}
+const strengthValues = {"HIGH CARD":0, "1 PAIR":1, "2 PAIR":2, "3 OF A KIND":3, "STRAIGHT":4, "FLUSH":5, "FULL HOUSE":6, "4 OF A KIND":7, "STRAIGHT FLUSH":8, "ROYAL FLUSH":9}
 
 //return an array containing a player's highest hand strength in each betting round
 function getStrengthArray(playerCards, tableCards) {
@@ -83,17 +83,16 @@ function getStrengthValue(strength, cards, tableCards) {
 const DECK = orderedDeck()
 const roundName = ["PreFlop", "Flop", "Turn", "River", "Showdown"]
 const smallestBet = 60 //the smallest amount of chips small blind has to bet
-const NUM_PLAYERS = 5
 const positionNames = ["Button", "SB", "BB"]
 
 const initialChips = 1200
 
 //Game Component
 class Game extends React.Component {
-    constructor() {
-        super()
+    constructor(props) {
+        super(props)
         this.state={
-            numPlayers: NUM_PLAYERS, //number of players
+            numPlayers: props.numPlayers, //number of players
             button: 0, //the player id of the button of a poker game
             currPlayer: 3, //who's turn (probably unnecessary)
             deck: shuffledDeck(), //a list of obj = {image: <Card .../>, rank: 0~12, suit: string}
@@ -255,7 +254,7 @@ class Game extends React.Component {
             const cards = this.getTwoCards(id, deck)
             const cardImages = [cards[0]["image"], cards[1]["image"]]
             playersData[id]["cards"] = cardImages
-            playersData[id]["message"] = null
+            playersData[id]["message"] = playersData[id]["chips"]===0 ? "busted" : null
             playersData[id]["turn"] = id === nowPlaying[0] ? true : false
             playersData[id]["folded"] = false
             playersData[id]["bet"] = 0
@@ -273,8 +272,8 @@ class Game extends React.Component {
         }
 
         this.setState({
-            numPlayers: NUM_PLAYERS, round: 0, playersData: playersData, nowPlaying: nowPlaying, 
-            tableData: tableData, highestBet: 0, deck: deck, currPlayer: nowPlaying[firstToAct], highestBet: 2*smallestBet
+            numPlayers: this.props.numPlayers, round: 0, playersData: playersData, nowPlaying: nowPlaying, 
+            tableData: tableData, deck: deck, currPlayer: nowPlaying[firstToAct], highestBet: 2*smallestBet
         })
     }
 
@@ -398,10 +397,10 @@ class Game extends React.Component {
         const table = this.state.tableData
         const tableComponent = <Table cards={table["cards"]} pot={table["pot"]} numRevealed={table.numRevealed}/>
         const newDeckButton = <div><h1>{this.state.message}</h1><button onClick={this.newRound}>New Deck</button></div>
-        const gameStatus = <h4>Current Player:{this.state.currPlayer} Betting Round:{roundName[this.state.round]}</h4>
+        const gameStatus = <h4>Current Player: {this.state.currPlayer} Betting Round: {roundName[this.state.round]}</h4>
 
         return (
-            <div>
+            <div class="center">
                 <hr/>
                 {tableComponent}
                 <hr/>

@@ -9,7 +9,7 @@ function Player(props) {
                 <h3>Player{props.id} [{props.position}] [Chips:{props.chips}] [Bet:{props.bet}] {props.message} {(props.raised>0) && <div>Raise bet to:{props.raised+props.bet}</div>}</h3> 
                 {
                     props.turn &&
-                    <div>
+                    <div class="center">
                     <div>
                         {props.cards} {props.strengths[props.round]}
                     </div>

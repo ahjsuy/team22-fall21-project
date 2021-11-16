@@ -2,7 +2,7 @@ h1{
     text-align: center;
     font-family: Garamond, serif;
     font-size: 60px;
-    font-weight: 20px;
+    font-weight: 26px;
 }
 
 h2{
@@ -27,13 +27,12 @@ h4{
     text-align: center;
     justify-content: center;
     align-items: center;
-    padding-left: 350px;
+    padding-left: 30px;
+    padding-right: 30px;
 }
 
 button{
     text-align: center;
     font-family: Garamond, serif;
-    justify-content: center;
-    align-items: center;
-    font-size: 16px;
+    font-size: 20px;
 }
