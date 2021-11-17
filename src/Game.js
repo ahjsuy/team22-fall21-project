@@ -218,8 +218,16 @@ class Game extends React.Component {
         //populate nowPlaying with remaining players 
         for (let i=button; i<playersData.length; i++) {
             if (playersData[i]["chips"] !== 0) nowPlaying.push(playersData[i]["id"])
+            else {
+                playersData[i]["folded"] = true
+                playersData[i]["message"] = "Busted"
+            }
         } for (let i=0; i<button; i++) {
             if (playersData[i]["chips"] !== 0) nowPlaying.push(playersData[i]["id"])
+            else {
+                playersData[i]["folded"] = true
+                playersData[i]["message"] = "Busted"
+            }
         }
 
         //find who's first to act
@@ -240,8 +248,8 @@ class Game extends React.Component {
                 playersData[nowPlaying[0]]["position"] = positionNames[1]
                 playersData[nowPlaying[1]]["position"] = positionNames[2]               
             } 
-        } else { } //game ends when there is only one player with chips remaining
-        
+        } else {} //game ends when there is only one player with chips remaining
+
 
         //rearrange nowPlaying by having first to act player stay at index 0
         const nowPlayingCopy = []
@@ -254,7 +262,7 @@ class Game extends React.Component {
             const cards = this.getTwoCards(id, deck)
             const cardImages = [cards[0]["image"], cards[1]["image"]]
             playersData[id]["cards"] = cardImages
-            playersData[id]["message"] = playersData[id]["chips"]===0 ? "busted" : null
+            playersData[id]["message"] = null
             playersData[id]["turn"] = id === nowPlaying[0] ? true : false
             playersData[id]["folded"] = false
             playersData[id]["bet"] = 0
@@ -273,7 +281,7 @@ class Game extends React.Component {
 
         this.setState({
             numPlayers: this.props.numPlayers, round: 0, playersData: playersData, nowPlaying: nowPlaying, 
-            tableData: tableData, deck: deck, currPlayer: nowPlaying[firstToAct], highestBet: 2*smallestBet
+            tableData: tableData, deck: deck, currPlayer: nowPlaying[firstToAct], highestBet: 2*smallestBet,
         })
     }
 
@@ -291,7 +299,10 @@ class Game extends React.Component {
         if (choice === "Increase") { //increase bet
             if (player["bet"]+player["raised"] < player["chips"]) {
                 player["raised"] += smallestBet
-                if (player["bet"]+player["raised"] === player["chips"]) player["message"] = "All in"
+                if (player["bet"]+player["raised"] === player["chips"]) {
+                    player["message"] = "All in"
+                    player["folded"] = true
+                }
             }
             if (player["bet"]+player["raised"]<highestBet) player["raised"] = highestBet - player["bet"] + smallestBet
             this.setState({playersData: playersData})
@@ -299,7 +310,6 @@ class Game extends React.Component {
             const tableData = {...this.state.tableData} //assigned by value
             const nowPlaying = [...this.state.nowPlaying]
             let round = this.state.round
-            
 
             //search next player's id
             const playingIndex = nowPlaying.indexOf(id)
@@ -374,7 +384,8 @@ class Game extends React.Component {
                 }
             }
 
-            this.setState({playersData: playersData, tableData: tableData, currPlayer: nextId, nowPlaying: nowPlaying, round: round, message: message, highestBet: highestBet, nextPlayer: true})
+            this.setState({playersData: playersData, tableData: tableData, currPlayer: nextId, nowPlaying: nowPlaying, 
+                round: round, message: message, highestBet: highestBet, nextPlayer: true, })
         }
     }
 

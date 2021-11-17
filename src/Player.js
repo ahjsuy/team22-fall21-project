@@ -6,7 +6,7 @@ function Player(props) {
     if (!props.folded) {
         return (
             <div>
-                <h3>Player{props.id} [{props.position}] [Chips:{props.chips}] [Bet:{props.bet}] {props.message} {(props.raised>0) && <div>Raise bet to:{props.raised+props.bet}</div>}</h3> 
+                <h3>Player{props.id} [{props.position}] {props.message} [Chips:{props.chips}] [Bet:{props.bet}] {(props.raised>0) && <div>Raise bet to:{props.raised+props.bet}</div>}</h3> 
                 {
                     props.turn &&
                     <div>
