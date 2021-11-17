@@ -76,7 +76,7 @@ function getStrengthArray(playerCards, tableCards) {
 //return an integer to represent the strength for ease of comparison between hands 
 function getStrengthValue(strength, cards, tableCards) {
     const base = 10*(cards[0]["rank"]+cards[1]["rank"]+tableCards[0]["rank"]+tableCards[1]["rank"]+tableCards[2]["rank"]+tableCards[3]["rank"]+tableCards[4]["rank"])
-    return base+10**strengthValues[strength]
+    return base+100**strengthValues[strength]
 }
 
 //Some game constants
@@ -215,6 +215,8 @@ class Game extends React.Component {
                 }
             }
         }
+        playersData[button]["position"] = "Button"
+
         //populate nowPlaying with remaining players 
         for (let i=button; i<playersData.length; i++) {
             if (playersData[i]["chips"] !== 0) nowPlaying.push(playersData[i]["id"])
@@ -235,13 +237,11 @@ class Game extends React.Component {
         //positions are named differently for certain number of players remaining
         if (nowPlaying.length > 3) {
             firstToAct = 3
-            playersData[nowPlaying[0]]["position"] = positionNames[0]
             playersData[nowPlaying[1]]["position"] = positionNames[1]
             playersData[nowPlaying[2]]["position"] = positionNames[2]
         } else if (nowPlaying.length > 1) {
             firstToAct = 0
             if (nowPlaying.length===3) {
-                playersData[nowPlaying[0]]["position"] = positionNames[0]
                 playersData[nowPlaying[1]]["position"] = positionNames[1]
                 playersData[nowPlaying[2]]["position"] = positionNames[2]
             } else { //when there are only two players, the button becomes the small blind, and the other player is the big blind
@@ -268,7 +268,7 @@ class Game extends React.Component {
             playersData[id]["bet"] = 0
             const strengths = getStrengthArray(cards, tableCards)
             playersData[id]["strengths"] = strengths
-            playersData[id]["strengthValue"] = getStrengthValue(strengths, cards, tableCards)
+            playersData[id]["strengthValue"] = getStrengthValue(strengths[4], cards, tableCards)
             playersData[id]["raised"] = 0
             if (playersData[id]["position"]==="SB") {
                 playersData[id]["bet"] = smallestBet
@@ -281,7 +281,8 @@ class Game extends React.Component {
 
         this.setState({
             numPlayers: this.props.numPlayers, round: 0, playersData: playersData, nowPlaying: nowPlaying, 
-            tableData: tableData, deck: deck, currPlayer: nowPlaying[firstToAct], highestBet: 2*smallestBet,
+            tableData: tableData, deck: deck, currPlayer: nowPlaying[firstToAct], highestBet: 2*smallestBet, nextPlayer: false,
+            button: button
         })
     }
 
@@ -391,6 +392,7 @@ class Game extends React.Component {
 
     render()  {
         //use playersData to map an array of Player Components
+        const roundEnd = this.state.round===4 ? true : false
         const playerComponents = this.state.playersData.map(player => <Player id={player.id} 
             position={player.position}
             chips={player.chips}
@@ -398,9 +400,9 @@ class Game extends React.Component {
             highestBet={this.state.highestBet}
             message={player.message}
             cards={player.cards}
-            turn={player.turn}
+            turn={roundEnd ? true : player.turn}
             action={player.action}
-            folded={player.folded}
+            folded={roundEnd ? false : player.folded}
             strengths={player.strengths}
             round={this.state.round}
             raised={player.raised}
@@ -416,8 +418,12 @@ class Game extends React.Component {
                 {tableComponent}
                 <hr/>
                 {playerComponents}
-                {this.state.round===4 ? newDeckButton : gameStatus}
-                {this.state.nextPlayer &&  <button onClick={this.onNextPlayer}>Next Player</button>}
+                {roundEnd ? newDeckButton : 
+                    <div>
+                        {gameStatus}
+                        {this.state.nextPlayer &&  <button onClick={this.onNextPlayer}>Next Player</button>}
+                    </div>
+                }
             </div>
         )
     }
