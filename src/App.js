@@ -9,12 +9,13 @@ class App extends React.Component {
     this.state={
       gameStarted: false,
       numPlayers: 6,
+      isPlaying: false
     }
     this.startGame = this.startGame.bind(this)
     this.setNumPlayers = this.setNumPlayers.bind(this)
   }
   startGame() {
-    this.setState({gameStarted: true})
+    this.setState({gameStarted: true, isPlaying: true})
   }
   setNumPlayers(event) {
     this.setState({numPlayers: event.target.value})
@@ -23,7 +24,7 @@ class App extends React.Component {
   render()  {
     return (
       <div>
-        <PlaySound />
+        <PlaySound isPlaying = {this.state.isPlaying}/>
         <h1>POKER</h1>
         {this.state.gameStarted ? <Game numPlayers={this.state.numPlayers}/> :
           <div>
