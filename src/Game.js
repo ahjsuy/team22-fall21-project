@@ -398,13 +398,14 @@ class Game extends React.Component {
                 else if (round === 3) tableData["numRevealed"] = 5 //River
                 else { //Showdown, find winner, distribute pot
                     const winnerIDs = this.findWinner(nowPlaying, playersData) 
-                    
+
                     //collect bet of remaining unfolded players
                     for (id of nowPlaying) {
                         if (!playersData[id]["folded"]){
                             const bet = playersData[id]["bet"]
                             playersData[id]["chips"] -= bet
                             tableData["pot"] += bet
+                            playersData[id]["bet"] = 0
                         }
                     }
                     tableData["uncollectedBet"] = 0
