@@ -156,7 +156,7 @@ class Game extends React.Component {
             tableCardImages.push(card["image"])
             tableCards.push(card)
         }     
-        this.state.tableData = {cards: tableCardImages, pot: smallestBet*3, numRevealed: 0}
+        this.state.tableData = {cards: tableCardImages, pot: smallestBet*3, numRevealed: 0, uncollectedBet: 0}
 
         //initialize players
         const playersData = []
@@ -213,6 +213,7 @@ class Game extends React.Component {
         }     
         tableData["cards"] = tableCardImages
         tableData["pot"] = smallestBet*3
+        tableData["uncollectedBet"] = 0
 
         //Find the next button
         for (let i=this.state.button+1; i<playersData.length; i++) {
@@ -311,7 +312,7 @@ class Game extends React.Component {
         if (choice === "Increase") { //increase bet
             if (player["bet"]+player["raised"] < player["chips"]) player["raised"] += smallestBet
             if (player["bet"]+player["raised"]+smallestBet <= highestBet) player["raised"] = highestBet - player["bet"] + smallestBet
-            if (player["bet"]+player["raised"] > player["chips"]) player["raised"] = player["chips"]-player["bet"]
+            if (player["bet"]+player["raised"] > player["chips"]) player["raised"] -= smallestBet
 
             this.setState({playersData: playersData})
         } else { 
@@ -324,17 +325,15 @@ class Game extends React.Component {
             let nextId = getNextItem(nowPlaying, id)
             if (id===nowPlaying[nowPlaying.length-1]) round += 1
 
+
             //these are actions that end a player's turn
             if (choice === "Fold") {
                 player["folded"] = true 
                 player["message"] = "folded"
-                nowPlaying.splice(nowPlaying.indexOf(id), 1) //remove from player list
-                //collect bet
-                let fix = 0 //if one of the blinds folds, don't collect again the bet they already contribute at the beginning of the betting round
-                //if (player["position"]==="SB") fix = smallestBet
-                //else if (player["position"]==="BB") fix = smallestBet*2
-                tableData["pot"] += player["bet"] - fix
-                player["chips"] -= player["bet"] - fix
+                tableData["pot"] += player["bet"]
+                player["chips"] -= player["bet"]
+
+                nowPlaying.splice(nowPlaying.indexOf(id), 1) //out of the game
 
                 if (nowPlaying.length === 1) { //end this game round early if all except one player folded
                     playersData[nowPlaying[0]]["chips"] += tableData["pot"] 
@@ -349,21 +348,27 @@ class Game extends React.Component {
                     let difference = highestBet - player["bet"] 
                     if (difference + player["bet"] >= player["chips"]) { //if proposed bet amount is greater than the amount of the chips the player has
                         difference = player["chips"] - player["bet"]
-                        player["message"] = "All in"
-                        player["folded"] = true
                     }
                     //collect bet
                     player["bet"] += difference
-                    tableData["pot"] += difference 
-                    player["chips"] -= difference
-                } else {//Raise
-                    player["chips"] -= player["raised"]
-                    tableData["pot"] += player["raised"]
-                    player["bet"] += player["raised"]  
-                    highestBet = player["bet"]   
-                    if (player["chips"]===0) {
+                    //tableData["pot"] += difference 
+                    //player["chips"] -= difference
+                    if (player["chips"]-player["bet"]===0) {
                         player["message"] = "All in"
                         player["folded"] = true
+                        player["chips"] -= player["bet"]
+                        tableData["pot"] += player["bet"]
+                    }
+                } else {//Raise
+                    //player["chips"] -= player["raised"]
+                    //tableData["pot"] += player["raised"]
+                    player["bet"] += player["raised"]  
+                    highestBet = player["bet"]   
+                    if (player["chips"]-player["bet"]===0) {
+                        player["message"] = "All in"
+                        player["folded"] = true
+                        player["chips"] -= player["bet"]
+                        tableData["pot"] += player["bet"]
                     } else {
                         nowPlaying = reorder(nowPlaying, id)
                         nextId = nowPlaying[1]
@@ -372,6 +377,7 @@ class Game extends React.Component {
                 }
                 player.raised = 0   
             }
+
             //end current player's turn 
             player["turn"] = false
 
@@ -383,6 +389,7 @@ class Game extends React.Component {
                 round = 4
                 tableData["numRevealed"] = 5
             }
+
             let message = ""
             let currPlayer = nextId
             if (round !== this.state.round) {
@@ -391,6 +398,17 @@ class Game extends React.Component {
                 else if (round === 3) tableData["numRevealed"] = 5 //River
                 else { //Showdown, find winner, distribute pot
                     const winnerIDs = this.findWinner(nowPlaying, playersData) 
+                    
+                    //collect bet of remaining unfolded players
+                    for (id of nowPlaying) {
+                        if (!playersData[id]["folded"]){
+                            const bet = playersData[id]["bet"]
+                            playersData[id]["chips"] -= bet
+                            tableData["pot"] += bet
+                        }
+                    }
+                    tableData["uncollectedBet"] = 0
+
                     if (winnerIDs.length === 1) {
                         message = "Player" + winnerIDs[0].toString() + " won the pot of " + tableData["pot"].toString() + " chips!!!"
                         playersData[winnerIDs[0]]["chips"] += tableData["pot"]
@@ -424,6 +442,14 @@ class Game extends React.Component {
                 currPlayer = first
             }
 
+            let totalBet = 0
+            for (id of nowPlaying) {
+                if (!playersData[id]["folded"]){
+                    totalBet += playersData[id]["bet"]
+                }
+            }
+            tableData["uncollectedBet"] = totalBet
+
             this.setState({playersData: playersData, tableData: tableData, currPlayer: currPlayer, nowPlaying: nowPlaying, 
                 round: round, message: message, highestBet: highestBet, nextPlayer: true, })
         }
@@ -447,7 +473,7 @@ class Game extends React.Component {
             raised={player.raised}
         />)
         const table = this.state.tableData
-        const tableComponent = <Table cards={table["cards"]} pot={table["pot"]} numRevealed={table.numRevealed}/>
+        const tableComponent = <Table cards={table["cards"]} pot={table["pot"]} numRevealed={table.numRevealed} uncollectedBet={table.uncollectedBet}/>
         const newDeckButton = <div><h1>{this.state.message}</h1><button onClick={this.newRound}>New Deck</button></div>
         const gameStatus = <h4>Current Player: {this.state.currPlayer} Betting Round: {roundName[this.state.round]}</h4>
 

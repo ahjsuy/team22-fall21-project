@@ -1,7 +1,7 @@
 import React from "react";
 
 //Table Component
-//props={cards, pot, numRevealed}
+//props={cards, pot, numRevealed, uncollectedBet}
 function Table (props) {
     const cards = []
     for (let i=0; i<props.numRevealed; i++) {cards.push(props.cards[i])}
@@ -12,7 +12,7 @@ function Table (props) {
             <div>
                 {cards}
             </div>
-            <h3>Pot: {props.pot}</h3>
+            <h3>Pot: {props.pot+props.uncollectedBet}</h3>
         </div>
     )
 }
