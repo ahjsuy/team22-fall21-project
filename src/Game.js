@@ -325,7 +325,8 @@ class Game extends React.Component {
         } else { 
             const tableData = {...this.state.tableData} //assigned by value
             let nowPlaying = [...this.state.nowPlaying]
-            let round = this.state.round
+            const prevRound = this.state.round
+            let round = prevRound
 
             //search next player's id and determines if the next betting round should begin
             let nextId = getNextItem(nowPlaying, id)
@@ -369,7 +370,7 @@ class Game extends React.Component {
                     highestBet = player["bet"]   
                     nowPlaying = reorder(nowPlaying, id)
                     nextId = nowPlaying[1]
-                    round -= 1
+                    round = prevRound
                 }
                 player.raised = 0   
             }
