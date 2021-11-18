@@ -79,6 +79,21 @@ function getStrengthValue(strength, cards, tableCards) {
     return base+100**strengthValues[strength]
 }
 
+function reorder(arr, element) {//element = the element to be placed at zero index
+    const result = [element]
+    let currItem = element
+    for (let i=1; i<arr.length; i++) {
+        result.push(getNextItem(arr, currItem))
+        currItem = result.at(-1)
+    }
+    return result
+}
+function getNextItem(arr, currItem) { //return the next item in an array cycle
+    const currIndex = arr.indexOf(currItem)
+    const nextIndex = (currIndex + 1) % arr.length
+    return arr[nextIndex]
+}
+
 //Some game constants
 const DECK = orderedDeck()
 const roundName = ["PreFlop", "Flop", "Turn", "River", "Showdown"]
@@ -309,16 +324,12 @@ class Game extends React.Component {
             this.setState({playersData: playersData})
         } else { 
             const tableData = {...this.state.tableData} //assigned by value
-            const nowPlaying = [...this.state.nowPlaying]
+            let nowPlaying = [...this.state.nowPlaying]
             let round = this.state.round
 
-            //search next player's id
-            const playingIndex = nowPlaying.indexOf(id)
-            let nextId
-            if (playingIndex === nowPlaying.length-1) {
-                nextId = nowPlaying[0]
-                round += 1
-            } else nextId = nowPlaying[playingIndex+1]
+            //search next player's id and determines if the next betting round should begin
+            let nextId = getNextItem(nowPlaying, id)
+            if (id===nowPlaying.at(-1)) round += 1
 
             //these are actions that end a player's turn
             if (choice === "Fold") {
@@ -331,7 +342,7 @@ class Game extends React.Component {
                 else if (player["position"]==="BB") fix = smallestBet*2
                 tableData["pot"] += player["bet"] - fix
                 player["chips"] -= player["bet"] - fix
-                
+
                 if (nowPlaying.length === 1) { //end this game round early if all except one player folded
                     playersData[nowPlaying[0]]["chips"] += tableData["pot"] 
                     const message = "Player" + nowPlaying[0].toString() + " won the pot of " + tableData["pot"].toString() + " chips!!!"
@@ -356,6 +367,9 @@ class Game extends React.Component {
                     tableData["pot"] += player["raised"]
                     player["bet"] += player["raised"]  
                     highestBet = player["bet"]   
+                    nowPlaying = reorder(nowPlaying, id)
+                    nextId = nowPlaying[1]
+                    round -= 1
                 }
                 player.raised = 0   
             }
@@ -364,8 +378,9 @@ class Game extends React.Component {
 
             //check if the next round should begin
             let message = ""
+            let currPlayer = nextId
             if (round !== this.state.round) {
-                if (round === 1) tableData["numRevealed"] = 3 //Flop
+                if (round === 1) tableData["numRevealed"] = 3 //Flop}
                 else if (round === 2) tableData["numRevealed"] = 4 //Turn    
                 else if (round === 3) tableData["numRevealed"] = 5 //River
                 else { //Showdown, find winner, distribute pot
@@ -383,9 +398,27 @@ class Game extends React.Component {
                     } 
                     tableData["pot"] = 0
                 }
+                //find the player right after button that hasn't folded
+                const button = this.state.button
+                let first = null
+                for (let i=button+1; i<this.state.numPlayers; i++) {
+                    if (nowPlaying.indexOf(i)!==-1) {
+                        first = i
+                        break
+                    }
+                } if (first==null) {
+                    for (let i=0; i<button; i++) {
+                        if (nowPlaying.indexOf(i)!==-1) {
+                            first = i
+                            break
+                        } 
+                    }
+                }
+                nowPlaying = reorder(nowPlaying, first)
+                currPlayer = first
             }
 
-            this.setState({playersData: playersData, tableData: tableData, currPlayer: nextId, nowPlaying: nowPlaying, 
+            this.setState({playersData: playersData, tableData: tableData, currPlayer: currPlayer, nowPlaying: nowPlaying, 
                 round: round, message: message, highestBet: highestBet, nextPlayer: true, })
         }
     }
