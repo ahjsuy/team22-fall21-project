@@ -457,7 +457,7 @@ class Game extends React.Component {
         const gameStatus = <h4>Current Player: {this.state.currPlayer} Betting Round: {roundName[this.state.round]}</h4>
 
         return (
-            <div class="center">
+            <div className="center">
                 <hr/>
                 {tableComponent}
                 <hr/>
