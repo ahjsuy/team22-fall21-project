@@ -243,6 +243,8 @@ class Game extends React.Component {
             else {
                 playersData[i]["folded"] = true
                 playersData[i]["message"] = "Busted"
+                playersData[i]["bet"] = 0
+                playersData[i]["chips"] = 0
             }
         }
 
