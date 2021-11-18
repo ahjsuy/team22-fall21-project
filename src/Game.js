@@ -451,6 +451,8 @@ class Game extends React.Component {
             }
             tableData["uncollectedBet"] = totalBet
 
+            while (playersData[currPlayer]["message"]==="All in") currPlayer = getNextItem(nowPlaying, currPlayer)
+
             this.setState({playersData: playersData, tableData: tableData, currPlayer: currPlayer, nowPlaying: nowPlaying, 
                 round: round, message: message, highestBet: highestBet, nextPlayer: true, })
         }
