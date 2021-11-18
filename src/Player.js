@@ -18,7 +18,7 @@ function Player(props) {
                         <div>
                             <button onClick={() => props.action(props.id, "Check/Call")}>Check/Call</button>
                             <button onClick={() => props.action(props.id, "Fold")}>Fold</button>
-                            {(props.bet+props.raised > props.highestBet) && <button onClick={() => props.action(props.id, "Raise")}>Raise</button>}
+                            {(props.bet+props.raised >= props.highestBet) && <button onClick={() => props.action(props.id, "Raise")}>Raise</button>}
                             <button onClick={() => props.action(props.id, "Increase")}>Increase bet</button>
                         </div>
                     }

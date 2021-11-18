@@ -315,12 +315,11 @@ class Game extends React.Component {
         if (choice === "Increase") { //increase bet
             if (player["bet"]+player["raised"] < player["chips"]) {
                 player["raised"] += smallestBet
-                if (player["bet"]+player["raised"] === player["chips"]) {
-                    player["message"] = "All in"
-                    player["folded"] = true
-                }
             }
-            if (player["bet"]+player["raised"]<highestBet) player["raised"] = highestBet - player["bet"] + smallestBet
+            if (player["bet"]+player["raised"]+smallestBet < highestBet) {
+                player["raised"] = highestBet - player["bet"] + smallestBet
+                if (player["bet"]+player["raised"] > player["chips"]) player["raised"] -= smallestBet
+            }
             this.setState({playersData: playersData})
         } else { 
             const tableData = {...this.state.tableData} //assigned by value
@@ -358,6 +357,8 @@ class Game extends React.Component {
                     if (difference + player["bet"] >= player["chips"]) { //if proposed bet amount is greater than the amount of the chips the player has
                         difference = player["chips"] - player["bet"]
                         player["message"] = "All in"
+                        player["folded"] = true
+                        nowPlaying.splice(nowPlaying.indexOf(id), 1)
                     }
                     //collect bet
                     player["bet"] += difference
@@ -368,6 +369,11 @@ class Game extends React.Component {
                     tableData["pot"] += player["raised"]
                     player["bet"] += player["raised"]  
                     highestBet = player["bet"]   
+                    if (player["chips"]===0) {
+                        player["message"] = "All in"
+                        player["folded"] = true
+                        nowPlaying.splice(nowPlaying.indexOf(id), 1)
+                    }
                     nowPlaying = reorder(nowPlaying, id)
                     nextId = nowPlaying[1]
                     round = prevRound
@@ -378,6 +384,10 @@ class Game extends React.Component {
             player["turn"] = false
 
             //check if the next round should begin
+            if (nowPlaying.length===0) {//if nowPlaying is empty, when everyone is all in.
+                round = 4
+                tableData["numRevealed"] = 5
+            }
             let message = ""
             let currPlayer = nextId
             if (round !== this.state.round) {
